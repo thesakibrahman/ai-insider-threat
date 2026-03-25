@@ -14,7 +14,7 @@ By leveraging state-of-the-art machine learning techniques including **Isolation
 
 ---
 
-## 🚀 Setup & Installation
+## Setup & Installation
 
 ### Prerequisites
 - **Python 3.9+**
@@ -72,3 +72,5 @@ The frontend is a lightweight, Vanilla JS, premium-styled web app.
 - **Explainable AI (XAI)**: SHAP
 - **Graphing & Networks**: NetworkX, PyVis
 - **Environment**: Python 3.9+
+
+## thesakibrahman
