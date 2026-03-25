@@ -24,20 +24,28 @@ def build_autoencoder(input_dim: int) -> models.Model:
     autoencoder.compile(optimizer='adam', loss='mse')
     return autoencoder
 
-def train_autoencoder(X: pd.DataFrame, epochs=20, batch_size=32) -> models.Model:
+def train_autoencoder(X: pd.DataFrame, existing_model=None, epochs=20, batch_size=32) -> models.Model:
     """
-    Trains the autoencoder model.
+    Trains or updates the autoencoder model incrementally.
     """
-    # Normalizing inputs between 0 and 1 before training
     X_min = X.min()
     X_max = X.max()
+    
+    if existing_model is not None:
+        model = existing_model
+        # Continual learning: update scaling bounds
+        X_min = np.minimum(model.X_min, X_min)
+        X_max = np.maximum(model.X_max, X_max)
+    else:
+        model = build_autoencoder(X.shape[1])
+        
+    # Normalizing inputs between 0 and 1 before training
     X_scaled = (X - X_min) / (X_max - X_min + 1e-9)
 
-    model = build_autoencoder(X.shape[1])
     # Autoencoder trains to predict its own input
     model.fit(X_scaled, X_scaled, epochs=epochs, batch_size=batch_size, verbose=0, validation_split=0.1)
     
-    # Attach scaling metadata to the model object for testing
+    # Attach scaling metadata to the model object for inference
     model.X_min = X_min
     model.X_max = X_max
     return model

@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
         anomalies: document.getElementById('stat-anomalies'),
         precision: document.getElementById('stat-precision'),
         recall: document.getElementById('stat-recall'),
+        f1_score: document.getElementById('stat-f1'),
+        mttd: document.getElementById('stat-mttd'),
         badge: document.getElementById('badge-count')
     };
 
@@ -80,6 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
         elStats.anomalies.innerText = metrics.anomalies_detected || 0;
         elStats.precision.innerText = `${metrics.simulated_precision || 0}%`;
         elStats.recall.innerText = `${metrics.simulated_recall || 0}%`;
+        elStats.f1_score.innerText = `${metrics.f1_score || 0}%`;
+        elStats.mttd.innerText = `${metrics.mttd || '0s'}`;
         elStats.badge.innerText = `${metrics.anomalies_detected || 0} threats`;
     }
 
@@ -137,26 +141,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function openExplainer(logId) {
-        const container = document.getElementById('shap-chart-container');
-        container.innerHTML = '<div style="text-align: center; padding: 20px;"><i class="fa-solid fa-circle-notch fa-spin fa-2x"></i></div>';
+        const containerShap = document.getElementById('shap-chart-container');
+        const containerLime = document.getElementById('lime-chart-container');
+        containerShap.innerHTML = '<div style="text-align: center; padding: 20px;"><i class="fa-solid fa-circle-notch fa-spin fa-2x"></i></div>';
+        if (containerLime) containerLime.innerHTML = '<div style="text-align: center; padding: 20px;"><i class="fa-solid fa-circle-notch fa-spin fa-2x"></i></div>';
         modal.classList.add('show');
 
         try {
             const res = await fetch(`${API_BASE}/explain/${logId}`);
             if (res.ok) {
                 const data = await res.json();
-                renderShapChart(data.explanation);
+                renderChart(data.explanation.shap, 'shap-chart-container');
+                if (containerLime && data.explanation.lime) {
+                    renderChart(data.explanation.lime, 'lime-chart-container');
+                }
             } else {
-                container.innerHTML = '<p style="color:red">Failed to generate explanation using TreeExplainer</p>';
+                containerShap.innerHTML = '<p style="color:red">Failed to generate explanation</p>';
+                if (containerLime) containerLime.innerHTML = '';
             }
         } catch (e) {
-            container.innerHTML = `<p style="color:red">Error: ${e.message}</p>`;
+            containerShap.innerHTML = `<p style="color:red">Error: ${e.message}</p>`;
+            if (containerLime) containerLime.innerHTML = '';
         }
     }
 
-    function renderShapChart(explanation) {
+    function renderChart(explanation, containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        
         if (!explanation || Object.keys(explanation).length === 0) {
-            document.getElementById('shap-chart-container').innerHTML = '<p>No feature data available.</p>';
+            container.innerHTML = '<p>No feature data available.</p>';
             return;
         }
 
@@ -164,8 +178,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Find max abs value to scale widths
         const maxAbs = Math.max(...Object.values(explanation).map(Math.abs));
 
-        for (const [feat, val] of Object.entries(explanation)) {
-            // Cap to top 5-6 features if large
+        // Select top 8 features to show
+        const topFeatures = Object.entries(explanation)
+            .sort((a,b) => Math.abs(b[1]) - Math.abs(a[1]))
+            .slice(0, 8);
+
+        for (const [feat, val] of topFeatures) {
             if (val === 0) continue; 
             
             const pct = maxAbs > 0 ? (Math.abs(val) / maxAbs) * 100 : 0;
@@ -191,7 +209,6 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
 
-        const container = document.getElementById('shap-chart-container');
         container.innerHTML = html;
         
         // Trigger animations
