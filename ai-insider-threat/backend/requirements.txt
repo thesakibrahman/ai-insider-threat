@@ -6,4 +6,6 @@ tensorflow
 shap
 networkx
 pyvis
-python-multipart
+python-multiparttransformers
+lime
+tf-keras>=2.15.0

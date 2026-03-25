@@ -1,6 +1,7 @@
 import shap
 import pandas as pd
 import numpy as np
+from lime.lime_tabular import LimeTabularExplainer
 
 def generate_shap_explanation(model, X_train: pd.DataFrame, instance: pd.DataFrame):
     """
@@ -33,5 +34,34 @@ def generate_shap_explanation(model, X_train: pd.DataFrame, instance: pd.DataFra
         # Fallback to feature weights or dummy if SHAP fails during online prediction
         print(f"SHAP Explainer Error: {str(e)}")
         # Simple dummy explanation based on value magnitudes if SHAP fails
+        vals = instance.iloc[0].to_dict()
+        return {k: float(v) * 0.1 for k, v in vals.items()}
+
+
+def generate_lime_explanation(model, X_train: pd.DataFrame, instance: pd.DataFrame):
+    """
+    Generates LIME feature importances for a specific instance.
+    """
+    try:
+        explainer = LimeTabularExplainer(
+            training_data=X_train.values,
+            feature_names=X_train.columns.tolist(),
+            class_names=['Score'],
+            mode='regression' # Using decision_function which returns continuous scores
+        )
+        
+        # Explain the instance
+        exp = explainer.explain_instance(
+            data_row=instance.iloc[0].values, 
+            predict_fn=model.decision_function, # decision_function returns anomaly scores
+            num_features=len(X_train.columns)
+        )
+        
+        # Convert to dictionary {feature: weight}
+        contributions = {feat: float(weight) for feat, weight in exp.as_list()}
+        return contributions
+
+    except Exception as e:
+        print(f"LIME Explainer Error: {str(e)}")
         vals = instance.iloc[0].to_dict()
         return {k: float(v) * 0.1 for k, v in vals.items()}

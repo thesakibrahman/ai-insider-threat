@@ -5,6 +5,62 @@ import os
 
 router = APIRouter()
 
+def auto_map_columns(df):
+    """
+    Heuristically maps uploaded CSV columns to exactly match the required schema:
+    'timestamp', 'user', 'event_type', 'details'
+    """
+    col_mapping = {}
+    
+    aliases = {
+        'timestamp': ['time', 'date', 'datetime', 'logtime', 'created_at', '_time', 'ts', 'timestamp'],
+        'user': ['username', 'employee', 'employee_id', 'userid', 'account', 'actor', 'src_user', 'user'],
+        'event_type': ['event', 'action', 'activity', 'type', 'category', 'operation', 'event_type', 'eventtype'],
+        'details': ['description', 'message', 'msg', 'info', 'note', 'content', 'data', 'details']
+    }
+    
+    available_cols = list(df.columns)
+    
+    for target, target_aliases in aliases.items():
+        if target in available_cols:
+            continue
+            
+        match_found = False
+        for col in available_cols:
+            clean_col = str(col).lower().replace(' ', '').replace('_', '')
+            for alias in target_aliases:
+                clean_alias = alias.replace('_', '')
+                if clean_col == clean_alias or clean_alias in clean_col:
+                    col_mapping[col] = target
+                    available_cols.remove(col)
+                    match_found = True
+                    break
+            if match_found:
+                break
+                
+    if col_mapping:
+        df = df.rename(columns=col_mapping)
+        print(f"Auto-mapped columns using aliases: {col_mapping}")
+        
+    # Bruteforce Fallback: If we still don't have the required columns,
+    # but the CSV has at least 4 columns, map the first 4 sequentially
+    required_cols = {'timestamp', 'user', 'event_type', 'details'}
+    missing = required_cols - set(df.columns)
+    
+    if missing and len(df.columns) >= 4:
+        print("Alias mapping failed. Applying brute-force structural column mapping...")
+        cols = list(df.columns)
+        fallback_map = {
+            cols[0]: 'timestamp',
+            cols[1]: 'user',
+            cols[2]: 'event_type',
+            cols[3]: 'details'
+        }
+        df = df.rename(columns=fallback_map)
+
+    return df
+
+
 @router.post("/simulate")
 async def trigger_simulation():
     """
@@ -33,6 +89,9 @@ async def upload_and_analyze(file: UploadFile = File(...)):
         # Check if the file had data URI prefix on the first column header due to Safari issue
         if len(df.columns) > 0 and df.columns[0].startswith("data:"):
             df.columns.values[0] = df.columns[0].split(',')[-1]
+            
+        # Auto-map columns using heuristics
+        df = auto_map_columns(df)
         
         # basic validation
         required_cols = {'timestamp', 'user', 'event_type', 'details'}
