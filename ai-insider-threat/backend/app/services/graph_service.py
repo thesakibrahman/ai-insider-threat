@@ -78,7 +78,7 @@ def export_graph_to_pyvis(G: nx.Graph, output_dir: str = 'app/static', filename:
         os.makedirs(output_dir)
         
     # Create PyVis network
-    net = Network(height='100%', width='100%', bgcolor='#1a1a1a', font_color='white')
+    net = Network(height='100vh', width='100%', bgcolor='#1a1a1a', font_color='white')
     net.from_nx(G)
     
     # Configure physics for better layout
