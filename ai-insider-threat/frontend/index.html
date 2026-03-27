@@ -10,7 +10,7 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=2">
 </head>
 
 <body>
@@ -30,9 +30,6 @@
                 <a href="settings.html" class="nav-item"><i class="fa-solid fa-gear"></i> Settings</a>
             </nav>
             <div class="controls">
-                <button id="btn-simulate" class="btn-primary">
-                    <i class="fa-solid fa-play"></i> Run Simulation
-                </button>
                 <p class="status-text" id="sim-status">System Standby</p>
             </div>
         </aside>
@@ -40,11 +37,12 @@
         <!-- Main Content -->
         <main class="main-content">
             <header class="top-header">
-                <button class="hamburger" id="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('active')">
+                <button class="hamburger" id="mobile-menu-btn"
+                    onclick="document.querySelector('.sidebar').classList.toggle('active')">
                     <i class="fa-solid fa-bars"></i>
                 </button>
                 <div class="header-titles">
-                    <h1>Real-Time Insider Threat Detection</h1>
+                    <h1>AI-Powered Insider Threat Detection System</h1>
                     <p>Powered by LLMs, Autoencoders & Isolation Forests</p>
                 </div>
                 <div class="user-profile">
@@ -85,18 +83,11 @@
                         <p id="stat-recall">0%</p>
                     </div>
                 </div>
-                <div class="metric-card" style="border-left: 4px solid #bc6ff1;">
-                    <div class="metric-icon" style="color: #bc6ff1;"><i class="fa-solid fa-star"></i></div>
+                <div class="metric-card purple">
+                    <div class="metric-icon"><i class="fa-solid fa-star"></i></div>
                     <div class="metric-info">
                         <h3>F1-Score</h3>
                         <p id="stat-f1">0%</p>
-                    </div>
-                </div>
-                <div class="metric-card" style="border-left: 4px solid #f16fb5;">
-                    <div class="metric-icon" style="color: #f16fb5;"><i class="fa-solid fa-stopwatch"></i></div>
-                    <div class="metric-info">
-                        <h3>Simulated MTTD</h3>
-                        <p id="stat-mttd">0s</p>
                     </div>
                 </div>
             </section>
@@ -152,22 +143,43 @@
         </main>
     </div>
 
+    <!-- No Data Modal -->
+    <div id="no-data-modal" class="modal">
+        <div class="modal-content glass-panel" style="max-width: 500px; text-align: center; padding: 40px;">
+            <i class="fa-solid fa-cloud-arrow-up fa-4x" style="color: var(--accent-color); margin-bottom: 20px;"></i>
+            <h2>No Dataset Detected</h2>
+            <p style="color: var(--text-secondary); margin: 15px 0 25px;">The machine learning pipeline requires logs to
+                analyze. Please upload your CSV dataset to generate the threat intelligence report.</p>
+            <a href="upload.html" class="btn-primary"
+                style="display: inline-block; padding: 12px 24px; border-radius: 8px; text-decoration: none;"><i
+                    class="fa-solid fa-file-csv"></i> Upload Data Now</a>
+            <br><br>
+            <button class="btn-secondary" onclick="document.getElementById('no-data-modal').classList.remove('show')"
+                style="background: transparent; border: 1px solid var(--border-color); color: var(--text-color); padding: 8px 16px; border-radius: 8px; cursor: pointer;">Dismiss</button>
+        </div>
+    </div>
+
     <!-- XAI Modal -->
     <div id="shap-modal" class="modal">
         <div class="modal-content glass-panel" style="max-width: 800px; width: 90%;">
-            <span class="close-btn">&times;</span>
+            <span class="close-btn"
+                onclick="document.getElementById('shap-modal').classList.remove('show')">&times;</span>
             <h2><i class="fa-solid fa-brain"></i> XAI Explanations</h2>
             <p>Feature contributions affecting the anomaly score.</p>
-            
+
             <div style="display: flex; gap: 32px; width: 100%; margin-top: 20px;">
                 <div style="flex: 1;">
-                    <h3 style="margin-bottom: 12px; font-size: 14px; text-transform: uppercase; color: var(--text-secondary);">SHAP Analysis</h3>
+                    <h3
+                        style="margin-bottom: 12px; font-size: 14px; text-transform: uppercase; color: var(--text-secondary);">
+                        SHAP Analysis</h3>
                     <div id="shap-chart-container" class="shap-chart-container">
                         <!-- Bars injected via JS -->
                     </div>
                 </div>
                 <div style="flex: 1;">
-                    <h3 style="margin-bottom: 12px; font-size: 14px; text-transform: uppercase; color: var(--text-secondary);">LIME Analysis</h3>
+                    <h3
+                        style="margin-bottom: 12px; font-size: 14px; text-transform: uppercase; color: var(--text-secondary);">
+                        LIME Analysis</h3>
                     <div id="lime-chart-container" class="shap-chart-container">
                         <!-- Bars injected via JS -->
                     </div>
@@ -176,7 +188,7 @@
         </div>
     </div>
 
-    <script src="js/app.js?v=4"></script>
+    <script src="js/app.js?v=8"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const savedName = localStorage.getItem('userName');

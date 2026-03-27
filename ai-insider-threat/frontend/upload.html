@@ -197,6 +197,11 @@
                     </div>
                     <i class="fa-solid fa-xmark" style="cursor: pointer; color: var(--text-secondary);" onclick="clearFile(event)"></i>
                 </div>
+                
+                <div id="size-warning" style="display: none; background: rgba(255, 165, 0, 0.1); border: 1px solid orange; color: orange; padding: 12px; border-radius: 8px; margin-top: 16px; font-size: 14px; text-align: left;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> 
+                    <span id="warning-text">Large dataset detected.</span>
+                </div>
 
                 <div class="action-buttons">
                     <button class="btn-outline" onclick="downloadSample()">
@@ -268,6 +273,24 @@
                     
                     analyzeBtn.style.opacity = '1';
                     analyzeBtn.style.pointerEvents = 'auto';
+                    
+                    // Dynamic Row Verification
+                    const chunkSize = 1024 * 50; // Read 50KB chunk
+                    const slice = file.slice(0, Math.min(file.size, chunkSize));
+                    slice.text().then(text => {
+                        const newlines = (text.match(/\n/g) || []).length;
+                        let estRows = file.size <= chunkSize ? newlines : Math.floor((file.size / chunkSize) * newlines);
+                        if (estRows > 100000) estRows = 100000; // backend cap
+                        
+                        if (estRows > 1000) {
+                            const waitMins = Math.ceil(estRows / 50000 * 1.5); // Very rough ETA (1.5 min per 50k rows)
+                            document.getElementById('size-warning').style.display = 'block';
+                            document.getElementById('warning-text').innerHTML = `<strong>High Volume Data Detected (~${estRows.toLocaleString()} rows).</strong><br/>The AI models will require approximately ${waitMins} - ${waitMins+1} minute(s) to finish analyzing. Please remain on this page while it processes.`;
+                        } else {
+                            document.getElementById('size-warning').style.display = 'none';
+                        }
+                    });
+                    
                 } else {
                     alert('Please upload a valid .csv file');
                 }
