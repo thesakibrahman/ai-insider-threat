@@ -179,6 +179,7 @@ body {
 .metric-card {
     background: var(--panel-bg);
     border: var(--glass-border);
+    border-left: 4px solid var(--accent-color); /* Default blue left border */
     backdrop-filter: blur(10px);
     border-radius: 16px;
     padding: 24px;
@@ -196,6 +197,11 @@ body {
 .metric-card.danger:hover { box-shadow: 0 10px 30px var(--danger-glow); }
 .metric-card.success:hover { box-shadow: 0 10px 30px var(--success-glow); }
 
+.metric-card.danger { border-left-color: var(--danger); }
+.metric-card.success { border-left-color: var(--success); }
+.metric-card.info { border-left-color: var(--info); }
+.metric-card.purple { border-left-color: #bc6ff1; }
+
 .metric-icon {
     width: 52px;
     height: 52px;
@@ -211,6 +217,7 @@ body {
 .metric-card.danger .metric-icon { color: var(--danger); background: var(--danger-glow); }
 .metric-card.success .metric-icon { color: var(--success); background: var(--success-glow); }
 .metric-card.info .metric-icon { color: var(--info); background: rgba(139, 92, 246, 0.2); }
+.metric-card.purple .metric-icon { color: #bc6ff1; background: rgba(188, 111, 241, 0.2); }
 
 .metric-info h3 {
     font-size: 13px;

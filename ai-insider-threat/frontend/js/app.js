@@ -1,7 +1,6 @@
 const API_BASE = 'http://localhost:8000/api';
 
 document.addEventListener('DOMContentLoaded', () => {
-    const btnSimulate = document.getElementById('btn-simulate');
     const simStatus = document.getElementById('sim-status');
     const tbBody = document.getElementById('anomaly-tbody');
     const modal = document.getElementById('shap-modal');
@@ -17,37 +16,71 @@ document.addEventListener('DOMContentLoaded', () => {
         precision: document.getElementById('stat-precision'),
         recall: document.getElementById('stat-recall'),
         f1_score: document.getElementById('stat-f1'),
-        mttd: document.getElementById('stat-mttd'),
         badge: document.getElementById('badge-count')
     };
 
-    // Load initial state if server is already running and has data
-    fetchMetrics();
-    fetchAnomalies();
-
-    btnSimulate.addEventListener('click', async () => {
-        btnSimulate.disabled = true;
-        btnSimulate.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
-        simStatus.innerText = 'Generating logs & analyzing...';
-
+    // Initialize Dashboard smartly (preserve custom uploads if present)
+    async function initDashboard() {
         try {
-            const res = await fetch(`${API_BASE}/simulate`, { method: 'POST' });
-            const data = await res.json();
-            
-            if (data.status === 'success') {
-                updateStats(data.metrics);
-                await fetchAnomalies();
-                loadGraph();
-                simStatus.innerText = 'Pipeline Complete';
+            const r = await fetch(`${API_BASE}/metrics`);
+            if (r.ok) {
+                const data = await r.json();
+                if (data && data.total_events > 0) {
+                    try { updateStats(data); } catch(e) { console.error(e); }
+                    try { fetchAnomalies(); } catch(e) { console.error(e); }
+                    try { loadGraph(); } catch(e) { console.error(e); }
+                    try {
+                        if (simStatus) {
+                            simStatus.className = 'status-badge success';
+                            simStatus.innerHTML = '<i class="fa-solid fa-circle-check"></i> Live Analysis';
+                        }
+                    } catch(e) {}
+                    return;
+                }
             }
-        } catch (error) {
-            console.error('Error simulating:', error);
-            simStatus.innerText = 'Error running simulation';
-        } finally {
-            btnSimulate.disabled = false;
-            btnSimulate.innerHTML = '<i class="fa-solid fa-play"></i> Run Simulation';
+        } catch (e) { console.log('No prev data:', e); }
+        
+        // No custom data active. Show the upload notification popup.
+        const noDataModal = document.getElementById('no-data-modal');
+        if (noDataModal) {
+            noDataModal.classList.add('show');
         }
-    });
+        if (simStatus) {
+            simStatus.className = 'status-badge';
+            simStatus.innerText = 'Awaiting Data Upload';
+        }
+        
+        // (Optional background fallback if manual trigger is re-enabled)
+        // runSimulation();
+    }
+    
+    initDashboard();
+
+    async function runSimulation() {
+        try {
+            simStatus.className = 'status-badge info';
+            simStatus.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Running Machine Learning Pipeline...';
+            
+            const res = await fetch(`${API_BASE}/simulate`, { method: 'POST' });
+            if (!res.ok) throw new Error('Simulation failed');
+            
+            simStatus.className = 'status-badge success';
+            simStatus.innerText = 'Pipeline Finished Successfully!';
+            
+            // refresh data
+            fetchMetrics();
+            fetchAnomalies();
+            loadGraph();
+            
+            setTimeout(() => { simStatus.innerText = ''; simStatus.className='status-badge'; }, 3000);
+        } catch (e) {
+            console.error(e);
+            simStatus.className = 'status-badge danger';
+            simStatus.innerText = 'Error running simulation';
+        }
+    }
+
+
 
     btnRefreshGraph.addEventListener('click', loadGraph);
 
@@ -83,7 +116,6 @@ document.addEventListener('DOMContentLoaded', () => {
         elStats.precision.innerText = `${metrics.simulated_precision || 0}%`;
         elStats.recall.innerText = `${metrics.simulated_recall || 0}%`;
         elStats.f1_score.innerText = `${metrics.f1_score || 0}%`;
-        elStats.mttd.innerText = `${metrics.mttd || '0s'}`;
         elStats.badge.innerText = `${metrics.anomalies_detected || 0} threats`;
     }
 
@@ -133,11 +165,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function loadGraph() {
-        iframe.src = `${API_BASE}/graph?t=${new Date().getTime()}`; // cache buster
-        iframe.style.display = 'block';
-        placeholder.style.display = 'none';
-        
-        // Polling to adjust height if needed, handled passively by iframe width=100% height=100%
+        try {
+            if (iframe) {
+                iframe.src = `${API_BASE}/graph?t=${new Date().getTime()}`; // cache buster
+                iframe.style.display = 'block';
+            }
+            if (placeholder) {
+                placeholder.style.display = 'none';
+            }
+        } catch(e) { console.error('Graph Load Fail:', e); }
     }
 
     async function openExplainer(logId) {

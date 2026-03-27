@@ -11,6 +11,11 @@ def build_behavioral_graph(df: pd.DataFrame, filter_type: str = "all") -> nx.Gra
     """
     G = nx.Graph()
     
+    # Cap the graph interactions to the first 1000 rows. 
+    # PyVis ForceAtlas2 physics equation physically crashes browsers with >5000 edges.
+    if len(df) > 1000:
+        df = df.head(1000)
+    
     if filter_type == 'users':
         # Connect users that share the same role
         roles = {}

@@ -8,8 +8,12 @@ def preprocess_logs(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return df
 
-    # Convert timestamp to datetime if not already
-    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    # Convert timestamp to datetime if not already, catching unparseable strings
+    df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
+    if df['timestamp'].isna().any():
+        print("Warning: Unparseable timestamps found. Replacing with valid datetimes to protect models.")
+        df.loc[df['timestamp'].isna(), 'timestamp'] = pd.Timestamp.now()
+        
     
     # Extract time-based features for easier aggregation
     df['hour'] = df['timestamp'].dt.hour
