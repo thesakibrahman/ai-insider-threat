@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     try { updateStats(data); } catch(e) { console.error(e); }
                     try { fetchAnomalies(); } catch(e) { console.error(e); }
                     try { loadGraph(); } catch(e) { console.error(e); }
+                    try { fetchSplitInfo(); } catch(e) { console.error(e); }
                     try {
                         if (simStatus) {
                             simStatus.className = 'status-badge success';
@@ -55,6 +56,62 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     initDashboard();
+
+    // ── Split Info Panel ────────────────────────────────────────────────────
+    async function fetchSplitInfo() {
+        try {
+            const res = await fetch(`${API_BASE}/split_info`);
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data.status !== 'ok' || !data.split) return;
+
+            const { train, validation, test, total } = data.split;
+            const sourceLabel = data.source_label || 'Dataset';
+
+            // Update the panel title with the actual data source
+            const titleEl = document.querySelector('.split-panel-header span');
+            if (titleEl) {
+                titleEl.innerHTML = `Dataset Split — <strong>${sourceLabel}</strong>`;
+            }
+
+            // Populate counts and tooltips
+            const trainCount = document.getElementById('split-train-count');
+            const valCount   = document.getElementById('split-val-count');
+            const testCount  = document.getElementById('split-test-count');
+            const trainBar   = document.getElementById('split-train-bar');
+            const valBar     = document.getElementById('split-val-bar');
+            const testBar    = document.getElementById('split-test-bar');
+            const trainRow   = document.getElementById('split-row-train');
+            const valRow     = document.getElementById('split-row-val');
+            const testRow    = document.getElementById('split-row-test');
+
+            if (trainCount) { trainCount.textContent = `${train.size.toLocaleString()} events`; trainCount.title = train.note || ''; }
+            if (valCount)   {
+                valCount.textContent = validation.size > 0
+                    ? `${validation.size.toLocaleString()} events`
+                    : 'Internal (10% of train)';
+                valCount.title = validation.note || '';
+            }
+            if (testCount)  { testCount.textContent = `${test.size.toLocaleString()} events`; testCount.title = test.note || ''; }
+
+            // Animate bars to real proportions
+            if (total > 0) {
+                const trainPct = ((train.size / total) * 100).toFixed(1);
+                const valPct   = validation.size > 0 ? ((validation.size / total) * 100).toFixed(1) : 0;
+                const testPct  = ((test.size / total) * 100).toFixed(1);
+                if (trainBar) { trainBar.style.width = '0'; setTimeout(() => trainBar.style.width = `${trainPct}%`, 100); }
+                if (valBar)   { valBar.style.width   = '0'; setTimeout(() => valBar.style.width   = `${Math.max(valPct, 2)}%`, 150); }
+                if (testBar)  { testBar.style.width  = '0'; setTimeout(() => testBar.style.width  = `${testPct}%`,  200); }
+            }
+
+            // Reveal the panel
+            const splitPanel = document.getElementById('split-panel');
+            if (splitPanel) splitPanel.style.display = 'block';
+        } catch (e) {
+            console.log('Split info not available:', e);
+        }
+    }
+
 
     async function runSimulation() {
         try {
@@ -90,7 +147,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (res.ok) {
                 const metrics = await res.json();
                 updateStats(metrics);
-                if (metrics.total_events > 0) loadGraph();
+                if (metrics.total_events > 0) {
+                    loadGraph();
+                    fetchSplitInfo();
+                }
             }
         } catch (e) {
             console.log("No initial metrics");

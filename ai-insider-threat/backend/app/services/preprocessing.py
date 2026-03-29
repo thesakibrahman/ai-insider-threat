@@ -4,9 +4,21 @@ from datetime import datetime
 def preprocess_logs(df: pd.DataFrame) -> pd.DataFrame:
     """
     Cleans raw simulated logs and structures timestamps for downstream processing.
+    Steps (as per paper's Preprocessing Layer):
+      1. Remove duplicate rows
+      2. Standardize timestamps
+      3. Handle missing values
+      4. Extract time-based features
     """
     if df.empty:
         return df
+
+    # Step 1: Remove duplicates (explicitly stated in methodology)
+    before = len(df)
+    df = df.drop_duplicates()
+    removed = before - len(df)
+    if removed > 0:
+        print(f"Preprocessing: Removed {removed} duplicate rows.")
 
     # Convert timestamp to datetime if not already, catching unparseable strings
     df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')

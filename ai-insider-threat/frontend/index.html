@@ -74,6 +74,7 @@
                     <div class="metric-info">
                         <h3>Detection Precision</h3>
                         <p id="stat-precision">0%</p>
+                        <small style="font-size:10px;color:var(--text-secondary);margin-top:2px;display:block;">on test set</small>
                     </div>
                 </div>
                 <div class="metric-card info">
@@ -81,6 +82,7 @@
                     <div class="metric-info">
                         <h3>Recall (Sensitivity)</h3>
                         <p id="stat-recall">0%</p>
+                        <small style="font-size:10px;color:var(--text-secondary);margin-top:2px;display:block;">on test set</small>
                     </div>
                 </div>
                 <div class="metric-card purple">
@@ -88,9 +90,57 @@
                     <div class="metric-info">
                         <h3>F1-Score</h3>
                         <p id="stat-f1">0%</p>
+                        <small style="font-size:10px;color:var(--text-secondary);margin-top:2px;display:block;">on test set</small>
                     </div>
                 </div>
             </section>
+
+            <!-- Data Split Panel (70% Train / 15% Val / 15% Test) — commented out, hidden from UI -->
+            <!--
+            <section class="split-panel-section" id="split-panel" style="display:none;">
+                <div class="split-panel-card">
+                    <div class="split-panel-header">
+                        <i class="fa-solid fa-chart-pie"></i>
+                        <span>Dataset Split — <strong>CERT v6.2</strong></span>
+                        <span class="split-badge">Methodology: 70 / 15 / 15</span>
+                    </div>
+                    <div class="split-bars">
+                        <div class="split-bar-row">
+                            <div class="split-bar-label">
+                                <span class="split-dot" style="background:#10b981;"></span>
+                                <span>Training (70%)</span>
+                                <span class="split-count" id="split-train-count">—</span>
+                            </div>
+                            <div class="split-track">
+                                <div class="split-fill" id="split-train-bar" style="width:70%;background:#10b981;"></div>
+                            </div>
+                        </div>
+                        <div class="split-bar-row">
+                            <div class="split-bar-label">
+                                <span class="split-dot" style="background:#f59e0b;"></span>
+                                <span>Validation (15%)</span>
+                                <span class="split-count" id="split-val-count">—</span>
+                            </div>
+                            <div class="split-track">
+                                <div class="split-fill" id="split-val-bar" style="width:15%;background:#f59e0b;"></div>
+                            </div>
+                        </div>
+                        <div class="split-bar-row">
+                            <div class="split-bar-label">
+                                <span class="split-dot" style="background:#3b82f6;"></span>
+                                <span>Test — Metrics Evaluated Here (15%)</span>
+                                <span class="split-count" id="split-test-count">—</span>
+                            </div>
+                            <div class="split-track">
+                                <div class="split-fill" id="split-test-bar" style="width:15%;background:#3b82f6;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="split-note"><i class="fa-solid fa-circle-info"></i> Precision, Recall, F1 &amp; MTTD are computed exclusively on the held-out <strong>test split</strong>. Models never see this data during training.</p>
+                </div>
+            </section>
+            -->
+
 
             <!-- Lower Section: Graph & Table -->
             <section class="content-grid">
