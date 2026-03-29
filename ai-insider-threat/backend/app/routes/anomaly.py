@@ -131,9 +131,57 @@ async def fetch_anomalies():
 @router.get("/metrics")
 async def fetch_metrics():
     """
-    Returns system metrics.
+    Returns system metrics evaluated on the held-out TEST split (15%).
     """
     return get_metrics()
+
+@router.get("/split_info")
+async def fetch_split_info():
+    """
+    Returns the live data split breakdown (train / val / test sizes and percentages).
+    Matches the paper's Experimental Setup: 70% train, 15% validation, 15% test.
+    """
+    train_df    = GLOBAL_STATE.get('raw_df')
+    val_df      = GLOBAL_STATE.get('val_df')
+    test_df     = GLOBAL_STATE.get('test_df')
+    data_source = GLOBAL_STATE.get('data_source', 'none')
+
+    if train_df is None:
+        return {
+            "status": "pipeline_not_run",
+            "message": "Run simulation or upload data first.",
+            "split": None
+        }
+
+    train_size = len(train_df)
+    val_size   = len(val_df)   if val_df   is not None and not val_df.empty   else 0
+    test_size  = len(test_df)  if test_df  is not None and not test_df.empty  else 0
+    total      = train_size + val_size + test_size
+
+    source_labels = {
+        'cert':      'CERT v6.2 Dataset',
+        'custom':    'Custom Upload',
+        'simulator': 'Simulated Data',
+        'none':      'Unknown Source'
+    }
+
+    return {
+        "status":      "ok",
+        "data_source": data_source,
+        "source_label": source_labels.get(data_source, 'Dataset'),
+        "split": {
+            "total":      total,
+            "train":      {"size": train_size, "pct": 70,
+                           "label": "Training",
+                           "note": "Models learn ONLY from this data"},
+            "validation": {"size": val_size,   "pct": 15,
+                           "label": "Validation",
+                           "note": "Used by Autoencoder during training to prevent overfitting. NOT used for metrics."},
+            "test":       {"size": test_size,  "pct": 15,
+                           "label": "Test — Metrics Evaluated Here",
+                           "note": "Held-out. Precision / Recall / F1 / MTTD computed here ONLY."}
+        }
+    }
 
 @router.get("/explain/{log_id}")
 async def explain_anomaly(log_id: int):

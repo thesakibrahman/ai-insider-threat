@@ -24,16 +24,25 @@ def build_autoencoder(input_dim: int) -> models.Model:
     autoencoder.compile(optimizer='adam', loss='mse')
     return autoencoder
 
-def train_autoencoder(X: pd.DataFrame, existing_model=None, epochs=20, batch_size=32) -> models.Model:
+def train_autoencoder(X: pd.DataFrame, existing_model=None, epochs=20, batch_size=32, X_val=None) -> models.Model:
     """
-    Trains or updates the autoencoder model incrementally.
+    Trains or updates the autoencoder model incrementally (continual learning).
+
+    Args:
+        X:              Training feature matrix (70% split).
+        existing_model: If provided, continues training this model (continual learning).
+        epochs:         Number of training epochs.
+        batch_size:     Mini-batch size.
+        X_val:          Validation feature matrix (15% split from paper).
+                        When provided, used as explicit Keras validation_data.
+                        When None, falls back to internal validation_split=0.1.
     """
     X_min = X.min()
     X_max = X.max()
     
     if existing_model is not None:
         model = existing_model
-        # Continual learning: update scaling bounds
+        # Continual learning: update scaling bounds to cover new data range
         X_min = np.minimum(model.X_min, X_min)
         X_max = np.maximum(model.X_max, X_max)
     else:
@@ -42,8 +51,25 @@ def train_autoencoder(X: pd.DataFrame, existing_model=None, epochs=20, batch_siz
     # Normalizing inputs between 0 and 1 before training
     X_scaled = (X - X_min) / (X_max - X_min + 1e-9)
 
-    # Autoencoder trains to predict its own input
-    model.fit(X_scaled, X_scaled, epochs=epochs, batch_size=batch_size, verbose=0, validation_split=0.1)
+    # Prepare validation data for Keras
+    # Paper states: 70% train, 15% validation, 15% test
+    if X_val is not None and len(X_val) > 0:
+        # Scale val using TRAIN stats (no data leakage)
+        X_val_scaled = (X_val - X_min) / (X_max - X_min + 1e-9)
+        validation_kwargs = {'validation_data': (X_val_scaled, X_val_scaled)}
+    else:
+        # Fallback: internal 10% from training (used in demo/simulator mode)
+        validation_kwargs = {'validation_split': 0.1}
+
+    # Autoencoder trains to reconstruct its own input
+    # Anomaly Score S(x) = ||x - x̂||² (as defined in paper Eq. 1)
+    model.fit(
+        X_scaled, X_scaled,
+        epochs=epochs,
+        batch_size=batch_size,
+        verbose=0,
+        **validation_kwargs
+    )
     
     # Attach scaling metadata to the model object for inference
     model.X_min = X_min

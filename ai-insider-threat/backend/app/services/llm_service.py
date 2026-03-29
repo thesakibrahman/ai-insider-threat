@@ -26,14 +26,28 @@ def analyze_text_intent(text: str) -> float:
         
     if classifier is None:
         text_lower = text.lower()
-        suspicious_keywords = [
-            'resignation', 'confidential', 'source code', 'export', 
-            'password', 'wire transfer', 'urgent', 'ip', 'customer database'
+
+        # Email-specific suspicious terms
+        email_keywords = [
+            'resignation', 'confidential', 'source code', 'export',
+            'password', 'wire transfer', 'urgent', 'ip', 'customer database',
+            'proprietary', 'nda', 'compete', 'interview'
         ]
+        # File-access suspicious terms (large/confidential files, bulk exports)
+        file_keywords = [
+            '/confidential/', '/private/', '/secret/', 'main_', 'config',
+            'credentials', 'backup', 'dump', 'export', 'keyfile', '.pem', '.key'
+        ]
+        # Login suspicious terms (unusual accounts, after-hours hints)
+        login_keywords = [
+            'root', 'admin', 'vpn', 'remote', 'sudo', 'after_hours'
+        ]
+
+        all_keywords = email_keywords + file_keywords + login_keywords
         score = 0.0
-        for keyword in suspicious_keywords:
+        for keyword in all_keywords:
             if keyword in text_lower:
-                score += 0.3
+                score += 0.25
         return min(1.0, score)
 
     try:
